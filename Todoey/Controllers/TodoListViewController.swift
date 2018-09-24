@@ -9,7 +9,7 @@
 import UIKit
 import RealmSwift
 
-class TodoListViewController: UITableViewController {
+class TodoListViewController: SwipeTableViewController {
 
     var todoItems: Results<Item>?
     let realm = try! Realm()
@@ -26,9 +26,9 @@ class TodoListViewController: UITableViewController {
         print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))
     }
     
-    //MARK - Tableview Datasource Methods
+    //MARK:- Tableview Datasource Methods
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "TodoItemCell", for: indexPath)
+        let cell = super.tableView(tableView, cellForRowAt: indexPath)
         if let item = todoItems?[indexPath.row] {
             cell.textLabel?.text = item.title
             
@@ -46,7 +46,7 @@ class TodoListViewController: UITableViewController {
         return todoItems?.count ?? 1
     }
     
-    //MARK - Tableview Delegate Methods
+    //MARK:- Tableview Delegate Methods
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         if let item = todoItems?[indexPath.row] {
             do {
@@ -57,7 +57,6 @@ class TodoListViewController: UITableViewController {
             } catch {
                 print("Error saving done status, \(error)")
             }
-            
         }
         
         tableView.reloadData()
@@ -65,7 +64,20 @@ class TodoListViewController: UITableViewController {
         tableView.deselectRow(at: indexPath, animated: true)
     }
     
-    //MARK - Add New Items
+    //MARK:- Delete Data From Swipe
+    override func updateModel(at indexPath: IndexPath) {
+        if let itemForDeletion = todoItems?[indexPath.row] {
+            do {
+                try realm.write {
+                    realm.delete(itemForDeletion)
+                }
+            } catch {
+                print("Error deleting item, \(error)")
+            }
+        }
+    }
+    
+    //MARK:- Add New Items
     @IBAction func addButtonPressed(_ sender: UIBarButtonItem) {
         var textField = UITextField()
         
@@ -99,7 +111,7 @@ class TodoListViewController: UITableViewController {
         present(alert, animated: true, completion: nil)
     }
     
-    //MARK - Model Manipulation Methods
+    //MARK:- Model Manipulation Methods
     func loadItems() {
         todoItems = selectedCategory?.items.sorted(byKeyPath: "title", ascending: true)
         
@@ -107,7 +119,7 @@ class TodoListViewController: UITableViewController {
     }
 }
 
-//MARK - Search bar methods
+//MARK:- Search bar methods
 extension TodoListViewController: UISearchBarDelegate {
     //MARK - SearchBar Delegate Methods
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
